@@ -1,0 +1,190 @@
+---
+title: "The relationship between SAT scores and admission rates in U.S. colleges"
+author:
+- Mohammad Boaisha
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+geometry: margin=1in
+fontsize: 11pt
+documentclass: article
+---
+
+```{r setup, include = FALSE}
+# DO NOT ALTER THIS CHUNK
+# Set knitr options
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = TRUE,
+  cache = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 5,
+  fig.asp = 0.618,
+  fig.align = "center",
+  out.width = "80%",
+  dpi = 120
+)
+# Load required packages
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(infer))
+# Load dataset
+college <- read_rds("college.rds")
+# Set seed
+set.seed(98261936)
+```
+
+## Preprocessing the dataset
+First, we inspect the dataset:
+```{r}
+head(college)
+```
+<<<<<<< HEAD
+It seems like a huge dataset with 1800+ variables. We will have to select the most appropriate variables to my question.
+
+
+Because the dataset has 1800+ variables, we will have to select the most appropriate variables to the question:
+
+Is there a relationship between SAT scores and admission rates?
+
+The columns that appear suitable are:
+* INSTNM
+* UNITID
+* SAT_AVG
+* SATVRMID 
+* SATMTMID 
+* SATWRMID 
+* ADM_RATE_ALL 
+* CONTROL
+
+```{r}
+#Load dplyr package to use the rename() function.
+library(dplyr)
+
+college_reduced_m <- college %>% 
+  # Reduce the dataset to only certain columns
+  select(INSTNM,UNITID,SAT_AVG,SATVRMID,SATMTMID,SATWRMID, ADM_RATE_ALL,CONTROL) %>%
+  # Rename the columns
+  rename(Instituation_name = "INSTNM",
+         unit_id = "UNITID",
+         sat_average_score = "SAT_AVG",
+         mid_sat_cr = "SATVRMID",
+         mid_sat_mt = "SATMTMID",
+         mid_sat_wr = "SATWRMID",
+         admit_rate = "ADM_RATE_ALL",
+         ownership = "CONTROL") %>%
+  # Exclude private for-profit colleges
+  filter(ownership != 3 ) %>%
+  # Recode the ownership variable
+  mutate(ownership = recode(ownership, "1" = "public", "2" = "private")) %>%
+  # I chose to drop NA values early for the sake of modularity
+  drop_na()
+
+
+```
+
+We end up with a much cleaner dataframe we can use for our analysis
+
+```{r}
+head(college_reduced_m)
+```
+## Exploratory data analysis
+
+We can find the summary statistic like so:
+```{r}
+# Calculate summary stats
+college_summary <- college_reduced_m %>%
+  group_by(ownership) %>%
+  summarize(mean_cr = mean(mid_sat_cr, na.rm = TRUE),
+            mean_mt = mean(mid_sat_mt, na.rm = TRUE),
+            mean_wr = mean(mid_sat_wr, na.rm = TRUE),
+            mean_admit = mean(admit_rate, na.rm = TRUE))
+
+# Display summary stats
+college_summary
+
+```
+
+The summary statistics show some key insights such as:
+
+* On average, public universities have lower admission standards than private universities.
+* On average, private universities' apllicants score higher in all sections of the SATs.
+
+To visualize our findings we write the following code: 
+
+```{r}
+ggplot(data = college_reduced_m, aes(x = sat_average_score, y = admit_rate, color = ownership)) +
+  geom_point() +
+  labs(x = "Average SAT score",
+       y = "Admission Rate",
+       title = "Admission rates in relation to average SAT scores") +
+  facet_grid(ownership ~ .) +
+  geom_smooth(color = "black", se = FALSE)
+```
+It appears that private universities tend to show a curvilinear relationship, meaning, private universities often admit applicants with higher scores until a certain point (around 1100~ SAT score), in contrast, public universities have some outliers that that can skew the relationship, this skew can be attributed to other factors that concern the nature of public universities (i.e. funding and seat availability)
+
+
+The above visualization shows 703 observations, the pattern can be inspected by taking a small sample:
+
+```{r}
+
+# Since we will utilize the Random Number Generator, it's imperative to set a seed ID
+# For consistent results and reproducibility
+set.seed(451)
+
+# Desired sample size for each category of "ownership"
+n = 50 # multiply this by 2 for true sample size. The maximum N is 272
+
+# Take a sample of public schools
+college_public_sample <- college_reduced_m %>%
+  filter(ownership == "public") %>%
+  sample_n(size = n)
+
+# Take a sample of private schools
+college_private_sample <- college_reduced_m %>%
+  filter(ownership == "private") %>%
+  sample_n(size = n)
+
+# Merge the two samples
+college_sample_merged <- bind_rows(college_public_sample, college_private_sample)
+
+# Visualize the merged sample dataframe
+ggplot(data = college_sample_merged, aes(x = sat_average_score, y = admit_rate, color = ownership)) +
+  geom_point() +
+  labs(x = "Average SAT score",
+       y = "Admission Rate",
+       title = "Admission rates in relation to average SAT scores") +
+  facet_grid(ownership ~ .) +
+  geom_smooth(color = "black", se = FALSE)
+
+```
+
+The samples appears to be representitve of the population. As both categorical variables follow the same patterns as their population.
+
+Ultiamtely, to answer the proposed question, we will need to find a correalation:
+
+```{r}
+# Calculate the correlation coefficient using Kendall's method
+cor(college_sample_merged$admit_rate,college_sample_merged$sat_average_score)
+```
+
+The resulting correlation function resulted in not only a negative number, but also a number that is fairly close to zero.
+
+This indicates that the relationship between admission rates and SAT scores regardless of university type is very weak and almost nonexistenant.
+
+To further drive the point home, we can conduct a signifence test:
+
+H0: There is a relationship between admission rates and SAT scores
+
+Ha: There is no relationship between admission rates and SAT scores
+
+```{r}
+# Conduct a t test
+t.test(college_sample_merged$admit_rate,college_sample_merged$sat_average_score, paired = TRUE)
+```
+
+The very tiny p-value is much smaller than 0.05, as such, we reject the null hypothesis in favor of the alternate hypothesis.
+
+In conclusion, there is no strong correlation between admission rates and SAT scores.
