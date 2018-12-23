@@ -161,30 +161,4 @@ ggplot(data = college_sample_merged, aes(x = sat_average_score, y = admit_rate, 
 
 ```
 
-The samples appears to be representitve of the population. As both categorical variables follow the same patterns as their population.
 
-Ultiamtely, to answer the proposed question, we will need to find a correalation:
-
-```{r}
-# Calculate the correlation coefficient using Kendall's method
-cor(college_sample_merged$admit_rate,college_sample_merged$sat_average_score)
-```
-
-The resulting correlation function resulted in not only a negative number, but also a number that is fairly close to zero.
-
-This indicates that the relationship between admission rates and SAT scores regardless of university type is very weak and almost nonexistenant.
-
-To further drive the point home, we can conduct a signifence test:
-
-H0: There is a relationship between admission rates and SAT scores
-
-Ha: There is no relationship between admission rates and SAT scores
-
-```{r}
-# Conduct a t test
-t.test(college_sample_merged$admit_rate,college_sample_merged$sat_average_score, paired = TRUE)
-```
-
-The very tiny p-value is much smaller than 0.05, as such, we reject the null hypothesis in favor of the alternate hypothesis.
-
-In conclusion, there is no strong correlation between admission rates and SAT scores.
