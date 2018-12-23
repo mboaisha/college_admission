@@ -161,4 +161,6 @@ ggplot(data = college_sample_merged, aes(x = sat_average_score, y = admit_rate, 
 
 ```
 
-
+```{r}
+cor(college_reduced_m$sat_average_score,college_reduced_m$admit_rate)
+```
