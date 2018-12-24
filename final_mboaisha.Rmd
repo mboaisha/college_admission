@@ -41,7 +41,7 @@ First, we inspect the dataset:
 ```{r}
 head(college)
 ```
-<<<<<<< HEAD
+
 It seems like a huge dataset with 1800+ variables. We will have to select the most appropriate variables to my question.
 
 
@@ -161,6 +161,14 @@ ggplot(data = college_sample_merged, aes(x = sat_average_score, y = admit_rate, 
 
 ```
 
+Find the correlation coefficient for the population (public and private):
 ```{r}
 cor(college_reduced_m$sat_average_score,college_reduced_m$admit_rate)
 ```
+
+Find the correlation coefficient for the sample (public and private):
+```{r}
+cor(college_sample_merged$sat_average_score,college_sample_merged$admit_rate)
+```
+
+We observe similar results depsite sampling. Taking into consideration public and private schools, it appears that there is a moderate negative relationship. **In general, schools that have low SAT score applicants tend to have higher admission rates**
